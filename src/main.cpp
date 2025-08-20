@@ -6,8 +6,11 @@
 
 // planet class
 
-const float G = 30.f;
-const int starAmount = 1000;
+const int screenWidth = 1920;
+const int screenHeight = 1080;
+
+const float G = 0.2;
+const int starAmount = 5000;
 
 class Planet
 {
@@ -38,7 +41,7 @@ public:
 
 // create star background
 
-std::vector<Vector2> initStars(int screenWidth, int screenHeight, int starAmount)
+std::vector<Vector2> initStars(int starAmount)
 {
     std::vector<Vector2> stars;
 
@@ -52,9 +55,41 @@ std::vector<Vector2> initStars(int screenWidth, int screenHeight, int starAmount
     return stars;
 }
 
-void renderStars(std::vector<Vector2> stars)
-{   
-    for (auto star : stars) DrawPixel(star.x, star.y, WHITE);
+void renderStars(std::vector<Vector2> stars, std::vector<Planet> *planets)
+{     
+    for (auto star : stars)
+    {
+        Vector2 gravitationOffset{0, 0};
+        for (auto planet : *planets)
+        {
+            Vector2 dir = {planet.m_pos.x- star.x, planet.m_pos.y - star.y};
+            float dist = sqrtf(dir.x * dir.x + dir.y * dir.y + 100.f);
+            dir = Vector2Normalize(dir);
+
+            float Fg = 0.01 * G * planet.m_mass / (dist * dist);
+
+            Vector2 delta = {dir.x * Fg, dir.y * Fg};
+
+            float d2 = delta.x*delta.x + delta.y*delta.y;
+            if (d2 > (6 * 6))
+            {
+                float d = sqrtf(d2);
+                delta.x *= (6 / d);
+                delta.y *= (6 / d);
+            }
+
+            gravitationOffset.x += delta.x;
+            gravitationOffset.y += delta.y;
+        }
+        const float l2 = gravitationOffset.x*gravitationOffset.x + gravitationOffset.y*gravitationOffset.y;
+        if (l2 > (15 * 15)) 
+        {
+            const float l = sqrtf(l2);
+            gravitationOffset.x *= 15 / l;
+            gravitationOffset.y *= 15 / l;
+        }
+        DrawPixel(star.x + gravitationOffset.x, star.y + gravitationOffset.y, WHITE);
+    }
 }
 
 // create and update planets
@@ -62,8 +97,8 @@ void renderStars(std::vector<Vector2> stars)
 Planet createPlanet()
 {
     Vector2 planetPos = GetMousePosition();
-    float planetMass = GetRandomValue(1000, 10000);
-    float planetSize = roundf(planetMass/500);
+    float planetMass = GetRandomValue(100000, 500000);
+    float planetSize = roundf(planetMass/80000);
     Color planetColor = {(unsigned char)GetRandomValue(0, 255), (unsigned char)GetRandomValue(0, 255), (unsigned char)GetRandomValue(0, 255), 255};
 
     return Planet(planetPos, planetMass, planetSize, planetColor);
@@ -72,8 +107,8 @@ Planet createPlanet()
 Planet createSun()
 {
     Vector2 planetPos = GetMousePosition();
-    float planetMass = 1000000;
-    float planetSize = 40;
+    float planetMass = 10000000;
+    float planetSize = 10;
     Color planetColor = {255, 255, 0, 255};
 
     return Planet(planetPos, planetMass, planetSize, planetColor);
@@ -91,13 +126,7 @@ void updatePlanets(std::vector<Planet> *planets, const float dt)
             Planet& other = (*planets)[j];
 
             Vector2 dir = {other.m_pos.x - planet.m_pos.x, other.m_pos.y - planet.m_pos.y};
-            double dist = sqrtf(dir.x * dir.x + dir.y * dir.y);
-
-            
-            if (dist < planet.m_size + other.m_size) 
-            {
-                dist = planet.m_size + other.m_size;
-            }
+            double dist = sqrtf(dir.x * dir.x + dir.y * dir.y + 100.f);
 
             dir = Vector2Normalize(dir);
 
@@ -127,14 +156,11 @@ void updatePlanets(std::vector<Planet> *planets, const float dt)
 
 int main()
 {
-    const int screenWidth = 1920;
-    const int screenHeight = 1080;
-
     SetConfigFlags(FLAG_MSAA_4X_HINT);
     InitWindow(screenWidth, screenHeight, "PlanetSim2D");
     SetTargetFPS(240);
 
-    std::vector<Vector2> stars = initStars(screenWidth, screenHeight, starAmount);    
+    std::vector<Vector2> stars = initStars(starAmount);    
     std::vector<Planet> planets;
 
     while (!WindowShouldClose())
@@ -152,7 +178,7 @@ int main()
         BeginDrawing();
         ClearBackground(BLACK);
 
-        renderStars(stars);
+        renderStars(stars, &planets);
         for (auto planet : planets) planet.draw();
 
         EndDrawing();
