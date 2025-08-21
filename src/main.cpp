@@ -9,7 +9,7 @@
 const int screenWidth = 1920;
 const int screenHeight = 1080;
 
-const float G = 0.2;
+const float G = 0.7;
 const int starAmount = 5000;
 
 class Planet
@@ -63,7 +63,7 @@ void renderStars(std::vector<Vector2> stars, std::vector<Planet> *planets)
         for (auto planet : *planets)
         {
             Vector2 dir = {planet.m_pos.x- star.x, planet.m_pos.y - star.y};
-            float dist = sqrtf(dir.x * dir.x + dir.y * dir.y + 100.f);
+            float dist = sqrtf(dir.x * dir.x + dir.y * dir.y + 300.f);
             dir = Vector2Normalize(dir);
 
             float Fg = 0.01 * G * planet.m_mass / (dist * dist);
@@ -77,7 +77,6 @@ void renderStars(std::vector<Vector2> stars, std::vector<Planet> *planets)
                 delta.x *= (6 / d);
                 delta.y *= (6 / d);
             }
-
             gravitationOffset.x += delta.x;
             gravitationOffset.y += delta.y;
         }
@@ -97,7 +96,7 @@ void renderStars(std::vector<Vector2> stars, std::vector<Planet> *planets)
 Planet createPlanet()
 {
     Vector2 planetPos = GetMousePosition();
-    float planetMass = GetRandomValue(100000, 500000);
+    float planetMass = GetRandomValue(80000, 400000);
     float planetSize = roundf(planetMass/80000);
     Color planetColor = {(unsigned char)GetRandomValue(0, 255), (unsigned char)GetRandomValue(0, 255), (unsigned char)GetRandomValue(0, 255), 255};
 
@@ -107,7 +106,7 @@ Planet createPlanet()
 Planet createSun()
 {
     Vector2 planetPos = GetMousePosition();
-    float planetMass = 10000000;
+    float planetMass = 15000000;
     float planetSize = 10;
     Color planetColor = {255, 255, 0, 255};
 
@@ -126,7 +125,7 @@ void updatePlanets(std::vector<Planet> *planets, const float dt)
             Planet& other = (*planets)[j];
 
             Vector2 dir = {other.m_pos.x - planet.m_pos.x, other.m_pos.y - planet.m_pos.y};
-            double dist = sqrtf(dir.x * dir.x + dir.y * dir.y + 100.f);
+            double dist = sqrtf(dir.x * dir.x + dir.y * dir.y + 300.f);
 
             dir = Vector2Normalize(dir);
 
@@ -159,7 +158,6 @@ int main()
     SetConfigFlags(FLAG_MSAA_4X_HINT);
     InitWindow(screenWidth, screenHeight, "PlanetSim2D");
     SetTargetFPS(240);
-
     std::vector<Vector2> stars = initStars(starAmount);    
     std::vector<Planet> planets;
 
@@ -183,6 +181,5 @@ int main()
 
         EndDrawing();
     }
-
     CloseWindow();
 }
